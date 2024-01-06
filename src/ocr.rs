@@ -26,7 +26,7 @@ fn image_to_tensor(image: &RgbaImage) -> Result<NdTensor<f32, 3>, Box<dyn Error>
     Ok(chw_tensor)
 }
 
-pub fn recognize(image: &RgbaImage) -> Result<(), Box<dyn Error>> {
+pub fn recognize(image: &RgbaImage) -> Result<Vec<String>, Box<dyn Error>> {
     let detection_model_data = include_bytes!("../models/text-detection.rten");
     let recognition_model_data = include_bytes!("../models/text-recognition.rten");
 
@@ -70,17 +70,13 @@ pub fn recognize(image: &RgbaImage) -> Result<(), Box<dyn Error>> {
 
     println!("✅ Text is recognized");
 
-    for line in line_texts
+    let lines = line_texts
         .iter()
         .flatten()
-        // Filter likely spurious detections. With future model improvements
-        // this should become unnecessary.
-        .filter(|l| l.to_string().len() > 1)
-    {
-        println!("{}", line);
-    }
+        .map(|l| l.to_string())
+        .collect::<Vec<_>>();
 
-    Ok(())
+    Ok(lines)
 }
 
 #[cfg(test)]
@@ -90,10 +86,10 @@ mod tests {
 
     #[test]
     fn test_recognize() {
-        let input_img = image::open("test.png").unwrap();
+        let input_img = image::open("test.jpg").unwrap();
         let input_img = input_img.into_rgba8();
 
-        recognize(&input_img).unwrap();
-        assert_eq!(1, 1);
+        let lines = recognize(&input_img).unwrap();
+        assert_eq!(lines, vec!["DON'T", "PANIC"]);
     }
 }
